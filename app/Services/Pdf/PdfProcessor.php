@@ -17,12 +17,12 @@ use ZipArchive;
 class PdfProcessor
 {
     /* ----------------------------------------------------------------- */
-    /*  Merge                                                             */
+    /*  Merge */
     /* ----------------------------------------------------------------- */
 
     public function merge(array $files, string $out): void
     {
-        $pdf = new Fpdi();
+        $pdf = new Fpdi;
 
         foreach ($files as $file) {
             $pageCount = $pdf->setSourceFile($file);
@@ -35,7 +35,7 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Split                                                             */
+    /*  Split */
     /* ----------------------------------------------------------------- */
 
     /**
@@ -45,7 +45,7 @@ class PdfProcessor
     public function split(string $file, array $ranges, string $mode, string $workDir): array
     {
         if ($mode === 'all') {
-            $probe = new Fpdi();
+            $probe = new Fpdi;
             $pageCount = $probe->setSourceFile($file);
             $ranges = array_map(fn (int $p) => [$p, $p], range(1, $pageCount));
             $mode = 'separate';
@@ -58,8 +58,8 @@ class PdfProcessor
         $outputs = [];
 
         if ($mode === 'merge') {
-            $out = $workDir . '/split-' . $this->rangeLabel($ranges) . '.pdf';
-            $pdf = new Fpdi();
+            $out = $workDir.'/split-'.$this->rangeLabel($ranges).'.pdf';
+            $pdf = new Fpdi;
             foreach ($ranges as [$start, $end]) {
                 for ($page = $start; $page <= $end; $page++) {
                     $this->importPageInto($pdf, $file, $page);
@@ -69,8 +69,8 @@ class PdfProcessor
             $outputs[] = $out;
         } else {
             foreach ($ranges as [$start, $end]) {
-                $out = $workDir . '/pages-' . $start . '-' . $end . '.pdf';
-                $pdf = new Fpdi();
+                $out = $workDir.'/pages-'.$start.'-'.$end.'.pdf';
+                $pdf = new Fpdi;
                 for ($page = $start; $page <= $end; $page++) {
                     $this->importPageInto($pdf, $file, $page);
                 }
@@ -83,7 +83,7 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Compress (Ghostscript)                                            */
+    /*  Compress (Ghostscript) */
     /* ----------------------------------------------------------------- */
 
     public function compress(string $file, string $level, string $out): void
@@ -92,9 +92,9 @@ class PdfProcessor
 
         $this->run([
             $gs, '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.4',
-            '-dPDFSETTINGS=/' . $level,
+            '-dPDFSETTINGS=/'.$level,
             '-dNOPAUSE', '-dBATCH', '-dNOSAFER',
-            '-sOutputFile=' . $out, $file,
+            '-sOutputFile='.$out, $file,
         ]);
 
         if (! file_exists($out) || filesize($out) === 0) {
@@ -103,16 +103,16 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Rotate (qpdf)                                                     */
+    /*  Rotate (qpdf) */
     /* ----------------------------------------------------------------- */
 
     public function rotate(string $file, int $degrees, string $out): void
     {
-        $this->run(['qpdf', $file, $out, '--rotate=+' . $degrees . ':1-z']);
+        $this->run(['qpdf', $file, $out, '--rotate=+'.$degrees.':1-z']);
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Protect / Unlock (qpdf)                                           */
+    /*  Protect / Unlock (qpdf) */
     /* ----------------------------------------------------------------- */
 
     public function protect(string $file, string $password, string $out): void
@@ -125,7 +125,7 @@ class PdfProcessor
     {
         $cmd = ['qpdf'];
         if ($password !== null && $password !== '') {
-            $cmd[] = '--password=' . $password;
+            $cmd[] = '--password='.$password;
         }
         $cmd[] = '--decrypt';
         $cmd[] = $file;
@@ -134,7 +134,7 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Watermark (FPDI)                                                  */
+    /*  Watermark (FPDI) */
     /* ----------------------------------------------------------------- */
 
     public function watermark(string $file, string $text, string $position, int $size, string $shade, string $out): void
@@ -146,7 +146,7 @@ class PdfProcessor
         };
 
         $size = max(8, min(144, $size));
-        $pdf = new RotatableFpdi();
+        $pdf = new RotatableFpdi;
         $pageCount = $pdf->setSourceFile($file);
 
         for ($page = 1; $page <= $pageCount; $page++) {
@@ -175,12 +175,12 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Page numbers (FPDI)                                               */
+    /*  Page numbers (FPDI) */
     /* ----------------------------------------------------------------- */
 
     public function pageNumbers(string $file, string $position, string $format, int $start, string $out): void
     {
-        $pdf = new Fpdi();
+        $pdf = new Fpdi;
         $pageCount = $pdf->setSourceFile($file);
 
         for ($page = 1; $page <= $pageCount; $page++) {
@@ -191,7 +191,7 @@ class PdfProcessor
 
             $number = $start + $page - 1;
             $label = $format === 'n_of_total'
-                ? $number . ' / ' . ($start + $pageCount - 1)
+                ? $number.' / '.($start + $pageCount - 1)
                 : (string) $number;
 
             $pdf->SetFont('Helvetica', '', 10);
@@ -215,17 +215,17 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  PDF → images (Poppler)                                            */
+    /*  PDF → images (Poppler) */
     /* ----------------------------------------------------------------- */
 
     /** @return array<int, string> */
     public function pdfToImages(string $file, string $format, int $dpi, string $workDir): array
     {
-        $prefix = $workDir . '/page';
+        $prefix = $workDir.'/page';
         $flag = $format === 'png' ? '-png' : '-jpeg';
         $this->run(['pdftoppm', $flag, '-r', (string) $dpi, $file, $prefix]);
 
-        $images = glob($workDir . '/page*.' . $format);
+        $images = glob($workDir.'/page*.'.$format);
         if (empty($images)) {
             throw new RuntimeException('No images were produced from this PDF.');
         }
@@ -235,12 +235,12 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Images → PDF (FPDF)                                               */
+    /*  Images → PDF (FPDF) */
     /* ----------------------------------------------------------------- */
 
     public function imagesToPdf(array $images, string $out): void
     {
-        $pdf = new FPDF();
+        $pdf = new FPDF;
 
         foreach ($images as $image) {
             $info = @getimagesize($image);
@@ -260,7 +260,7 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Extract text (Poppler)                                            */
+    /*  Extract text (Poppler) */
     /* ----------------------------------------------------------------- */
 
     public function extractText(string $file, bool $keepLayout, string $out): void
@@ -275,54 +275,94 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Office → PDF (LibreOffice)                                        */
+    /*  Office → PDF (LibreOffice) */
+    /* ----------------------------------------------------------------- */
+
+    /* ----------------------------------------------------------------- */
+    /*  Office → PDF (LibreOffice) */
     /* ----------------------------------------------------------------- */
 
     public function officeToPdf(string $file, string $workDir): string
     {
-        $profileDir = str_replace('\\', '/', $workDir) . '/lo_profile';
+        if (! $this->isLibreOfficeAvailable()) {
+            throw new RuntimeException(
+                'LibreOffice is not installed or not found on the server. '
+                .'Please install it (e.g. "sudo apt install libreoffice" on Ubuntu/Debian).'
+            );
+        }
+
+        $bin = $this->libreOfficeBinary();
+        $profileDir = str_replace('\\', '/', $workDir).'/lo_profile';
+        $fileUri = 'file:///'.ltrim(str_replace('\\', '/', $profileDir), '/');
+
         $this->run([
-            'soffice',
-            '-env:UserInstallation=file://' . $profileDir,
+            $bin,
+            '-env:UserInstallation='.$fileUri,
             '--headless',
             '--norestore',
             '--convert-to', 'pdf', '--outdir', $workDir, $file,
-        ], 'LibreOffice could not convert this document.', 180);
+        ], 'LibreOffice could not convert this document.', 180, $workDir, [
+            'HOME' => $workDir,
+            'TMPDIR' => $workDir,
+        ]);
 
-        $produced = glob($workDir . '/*.pdf');
-        if (empty($produced)) {
-            throw new RuntimeException('The conversion produced no PDF file.');
+        $expectedPdf = $workDir.'/'.pathinfo($file, PATHINFO_FILENAME).'.pdf';
+        if (file_exists($expectedPdf) && filesize($expectedPdf) > 0) {
+            return $expectedPdf;
         }
 
-        return $produced[0];
+        $produced = glob($workDir.'/*.pdf') ?: [];
+        if (! empty($produced) && filesize($produced[0]) > 0) {
+            return $produced[0];
+        }
+
+        throw new RuntimeException('The conversion produced no PDF file.');
     }
 
     /* ----------------------------------------------------------------- */
-    /*  PDF → Word (LibreOffice Writer PDF import filter)                 */
+    /*  PDF → Word (LibreOffice Writer PDF import filter) */
     /* ----------------------------------------------------------------- */
 
     public function pdfToWord(string $file, string $workDir): string
     {
-        $profileDir = str_replace('\\', '/', $workDir) . '/lo_profile';
+        if (! $this->isLibreOfficeAvailable()) {
+            throw new RuntimeException(
+                'LibreOffice is not installed or not found on the server. '
+                .'Please install it (e.g. "sudo apt install libreoffice" on Ubuntu/Debian).'
+            );
+        }
+
+        $bin = $this->libreOfficeBinary();
+        $profileDir = str_replace('\\', '/', $workDir).'/lo_profile';
+        $fileUri = 'file:///'.ltrim(str_replace('\\', '/', $profileDir), '/');
+
         $this->run([
-            'soffice',
-            '-env:UserInstallation=file://' . $profileDir,
+            $bin,
+            '-env:UserInstallation='.$fileUri,
             '--headless',
             '--norestore',
             '--infilter=writer_pdf_import',
             '--convert-to', 'docx', '--outdir', $workDir, $file,
-        ], 'LibreOffice could not convert this PDF to Word.', 180);
+        ], 'LibreOffice could not convert this PDF to Word.', 180, $workDir, [
+            'HOME' => $workDir,
+            'TMPDIR' => $workDir,
+        ]);
 
-        $produced = glob($workDir . '/*.docx');
-        if (empty($produced)) {
-            throw new RuntimeException('The conversion produced no Word document.');
+        $expectedDocx = $workDir.'/'.pathinfo($file, PATHINFO_FILENAME).'.docx';
+        if (file_exists($expectedDocx) && filesize($expectedDocx) > 0) {
+            return $expectedDocx;
         }
 
-        return $produced[0];
+        $produced = glob($workDir.'/*.docx') ?: [];
+        if (! empty($produced) && filesize($produced[0]) > 0) {
+            return $produced[0];
+        }
+
+        throw new RuntimeException('The conversion produced no Word document.');
     }
 
     /* ----------------------------------------------------------------- */
-    /*  OCR (OCRmyPDF + Tesseract)                                        */
+    /*  OCR (OCRmyPDF + Tesseract) */
     /* ----------------------------------------------------------------- */
 
     public function ocr(string $file, string $language, bool $skipText, bool $rotatePages, string $out): void
@@ -349,13 +389,13 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Helpers                                                           */
+    /*  Helpers */
     /* ----------------------------------------------------------------- */
 
     /** @return array<int, string> */
     public function zip(array $files, string $zipPath): string
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             throw new RuntimeException('Could not create the ZIP archive.');
         }
@@ -382,12 +422,12 @@ class PdfProcessor
                 continue;
             }
             if (preg_match('/^(\d+)(?:-(\d+))?$/', $part, $m) !== 1) {
-                throw new RuntimeException('Invalid range "' . $part . '". Use formats like 1-3,5,8-10.');
+                throw new RuntimeException('Invalid range "'.$part.'". Use formats like 1-3,5,8-10.');
             }
             $start = (int) $m[1];
             $end = isset($m[2]) && $m[2] !== '' ? (int) $m[2] : $start;
             if ($start < 1 || $end < $start || $start > $maxPage) {
-                throw new RuntimeException('Range "' . $part . '" is outside the document (1-' . $maxPage . ').');
+                throw new RuntimeException('Range "'.$part.'" is outside the document (1-'.$maxPage.').');
             }
             $ranges[] = [$start, min($end, $maxPage)];
         }
@@ -397,7 +437,7 @@ class PdfProcessor
 
     public function pageCount(string $file): int
     {
-        $probe = new Fpdi();
+        $probe = new Fpdi;
 
         return $probe->setSourceFile($file);
     }
@@ -414,15 +454,16 @@ class PdfProcessor
     /** @param array<int, array{0:int,1:int}> $ranges */
     private function rangeLabel(array $ranges): string
     {
-        return implode('_', array_map(fn ($r) => $r[0] . '-' . $r[1], $ranges));
+        return implode('_', array_map(fn ($r) => $r[0].'-'.$r[1], $ranges));
     }
 
     /**
      * @param  array<int, string>  $cmd
+     * @param  array<string, string>  $env
      */
-    private function run(array $cmd, ?string $friendlyError = null, int $timeout = 120): void
+    protected function run(array $cmd, ?string $friendlyError = null, int $timeout = 120, ?string $cwd = null, array $env = []): void
     {
-        $process = new Process($cmd);
+        $process = new Process($cmd, $cwd, $env ?: null);
         $process->setInput('');
         $process->setTimeout($timeout);
         $process->run();
@@ -431,12 +472,12 @@ class PdfProcessor
             $detail = trim($process->getErrorOutput() ?: $process->getOutput());
             throw new RuntimeException(
                 ($friendlyError ?? 'The PDF engine reported an error.')
-                . ($detail !== '' ? ' (' . mb_strimwidth($detail, 0, 300) . ')' : '')
+                .($detail !== '' ? ' ('.mb_strimwidth($detail, 0, 300).')' : '')
             );
         }
     }
 
-    private function ghostscriptBinary(): string
+    public function ghostscriptBinary(): string
     {
         if (PHP_OS_FAMILY === 'Windows') {
             foreach (['gswin64c', 'gswin32c', 'gs'] as $bin) {
@@ -457,5 +498,138 @@ class PdfProcessor
         }
 
         return 'gs';
+    }
+
+    public function isGhostscriptAvailable(): bool
+    {
+        return $this->isBinaryAvailable($this->ghostscriptBinary());
+    }
+
+    public function libreOfficeBinary(): string
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            foreach (['soffice', 'libreoffice'] as $bin) {
+                $process = new Process(['where', $bin]);
+                $process->run();
+                if ($process->isSuccessful()) {
+                    $firstLine = trim(explode("\r\n", trim($process->getOutput()))[0] ?? '');
+                    if ($firstLine !== '') {
+                        return $firstLine;
+                    }
+                }
+            }
+
+            foreach ([
+                'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
+                'C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe',
+            ] as $candidate) {
+                if (file_exists($candidate)) {
+                    return $candidate;
+                }
+            }
+
+            return 'soffice';
+        }
+
+        foreach ([
+            '/usr/bin/soffice',
+            '/usr/bin/libreoffice',
+            '/usr/local/bin/soffice',
+            '/usr/local/bin/libreoffice',
+            '/usr/lib/libreoffice/program/soffice',
+            '/bin/soffice',
+            '/bin/libreoffice',
+        ] as $candidate) {
+            if (is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        foreach (['soffice', 'libreoffice'] as $bin) {
+            $process = new Process(['which', $bin]);
+            $process->run();
+            if ($process->isSuccessful()) {
+                $firstLine = trim(explode("\n", trim($process->getOutput()))[0] ?? '');
+                if ($firstLine !== '') {
+                    return $firstLine;
+                }
+            }
+        }
+
+        return 'soffice';
+    }
+
+    public function isLibreOfficeAvailable(): bool
+    {
+        return $this->isBinaryAvailable($this->libreOfficeBinary());
+    }
+
+    public function isQpdfAvailable(): bool
+    {
+        return $this->isBinaryAvailable('qpdf');
+    }
+
+    public function isPopplerAvailable(): bool
+    {
+        return $this->isBinaryAvailable('pdftoppm') && $this->isBinaryAvailable('pdftotext');
+    }
+
+    public function isOcrAvailable(): bool
+    {
+        return $this->isBinaryAvailable('ocrmypdf');
+    }
+
+    private function isBinaryAvailable(string $binary): bool
+    {
+        if (file_exists($binary)) {
+            return is_executable($binary) || PHP_OS_FAMILY === 'Windows';
+        }
+
+        $checkCmd = PHP_OS_FAMILY === 'Windows' ? ['where', $binary] : ['which', $binary];
+        $process = new Process($checkCmd);
+        $process->run();
+
+        return $process->isSuccessful();
+    }
+
+    /**
+     * Diagnostic report of all engine dependencies.
+     *
+     * @return array<string, array{name: string, available: bool, binary: string, package: string}>
+     */
+    public function checkEnvironment(): array
+    {
+        return [
+            'ghostscript' => [
+                'name' => 'Ghostscript (compress)',
+                'available' => $this->isGhostscriptAvailable(),
+                'binary' => $this->ghostscriptBinary(),
+                'package' => 'ghostscript',
+            ],
+            'qpdf' => [
+                'name' => 'QPDF (rotate, protect, unlock)',
+                'available' => $this->isQpdfAvailable(),
+                'binary' => 'qpdf',
+                'package' => 'qpdf',
+            ],
+            'poppler' => [
+                'name' => 'Poppler (pdf-to-images, extract-text)',
+                'available' => $this->isPopplerAvailable(),
+                'binary' => 'pdftoppm, pdftotext',
+                'package' => 'poppler-utils',
+            ],
+            'libreoffice' => [
+                'name' => 'LibreOffice (office-to-pdf, pdf-to-word)',
+                'available' => $this->isLibreOfficeAvailable(),
+                'binary' => $this->libreOfficeBinary(),
+                'package' => 'libreoffice',
+            ],
+            'ocrmypdf' => [
+                'name' => 'OCRmyPDF + Tesseract (ocr)',
+                'available' => $this->isOcrAvailable(),
+                'binary' => 'ocrmypdf',
+                'package' => 'ocrmypdf tesseract-ocr',
+            ],
+        ];
     }
 }
