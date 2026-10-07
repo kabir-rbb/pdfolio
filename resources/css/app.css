@@ -1,0 +1,49 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Brand — deep ocean blues */
+    --color-brand-50: #eef4ff;
+    --color-brand-100: #dce8ff;
+    --color-brand-200: #c0d4fe;
+    --color-brand-300: #95b4fd;
+    --color-brand-400: #618dfb;
+    --color-brand-500: #3d65f5;
+    --color-brand-600: #2749e8;
+    --color-brand-700: #1f37c8;
+    --color-brand-800: #202ea0;
+    --color-brand-900: #1f2c7d;
+
+    /* Accent — light orange */
+    --color-tangerine-50: #fff6ed;
+    --color-tangerine-100: #ffead4;
+    --color-tangerine-200: #ffd0a8;
+    --color-tangerine-300: #ffb26b;
+    --color-tangerine-400: #ff9440;
+    --color-tangerine-500: #fe7a1a;
+    --color-tangerine-600: #ef6006;
+
+    /* Accent — light green */
+    --color-mint-50: #effdf4;
+    --color-mint-100: #d9fbe5;
+    --color-mint-200: #b5f5cd;
+    --color-mint-300: #7cebab;
+    --color-mint-400: #41d887;
+    --color-mint-500: #1dbf6b;
+    --color-mint-600: #129e54;
+
+    --color-canvas: #f7faff;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--color-canvas);
+}
