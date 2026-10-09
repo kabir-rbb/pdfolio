@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Pdf\PdfProcessor;
 use App\Support\ToolRegistry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -32,6 +33,8 @@ class ToolController extends Controller
             throw $e;
         } catch (RuntimeException $e) {
             $this->cleanup($workDir);
+
+            Log::warning("Tool [{$tool}] error: ".$e->getMessage());
 
             return response()->json(['message' => $e->getMessage()], 422);
         } catch (\Throwable $e) {
@@ -114,22 +117,6 @@ class ToolController extends Controller
 
                 return $this->download($out, 'pdfolio-numbered.pdf', $workDir);
 
-            case 'protect':
-                [$file] = $this->storeFiles($request, $config, $workDir, 'file', ['mimes:pdf']);
-                $data = $request->validate(['password' => ['required', 'string', 'min:1', 'max:64']]);
-                $out = $workDir.'/pdfolio-protected.pdf';
-                $pdf->protect($file, $data['password'], $out);
-
-                return $this->download($out, 'pdfolio-protected.pdf', $workDir);
-
-            case 'unlock':
-                [$file] = $this->storeFiles($request, $config, $workDir, 'file', ['mimes:pdf']);
-                $data = $request->validate(['password' => ['nullable', 'string', 'max:64']]);
-                $out = $workDir.'/pdfolio-unlocked.pdf';
-                $pdf->unlock($file, $data['password'] ?? null, $out);
-
-                return $this->download($out, 'pdfolio-unlocked.pdf', $workDir);
-
             case 'pdf-to-images':
                 [$file] = $this->storeFiles($request, $config, $workDir, 'file', ['mimes:pdf']);
                 $data = $request->validate([
@@ -165,18 +152,6 @@ class ToolController extends Controller
                 $name = pathinfo($request->file('file')->getClientOriginalName(), PATHINFO_FILENAME).'.docx';
 
                 return $this->download($produced, $name, $workDir);
-
-            case 'ocr':
-                [$file] = $this->storeFiles($request, $config, $workDir, 'file', ['mimes:pdf']);
-                $data = $request->validate([
-                    'language' => ['required', 'in:eng,nep,hin,spa,fra,deu'],
-                    'skip_text' => ['required', 'in:yes,no'],
-                    'rotate_pages' => ['required', 'in:yes,no'],
-                ]);
-                $out = $workDir.'/pdfolio-ocr.pdf';
-                $pdf->ocr($file, $data['language'], $data['skip_text'] === 'yes', $data['rotate_pages'] === 'yes', $out);
-
-                return $this->download($out, 'pdfolio-ocr.pdf', $workDir);
 
             case 'office-to-pdf':
                 [$file] = $this->storeFiles($request, $config, $workDir, 'file', ['mimes:doc,docx,xls,xlsx,ppt,pptx,odt,ods,odp,rtf,csv,txt']);
@@ -221,8 +196,7 @@ class ToolController extends Controller
 
     private function download(string $path, string $name, string $workDir): BinaryFileResponse
     {
-        // Move the deliverable out of the work dir, then delete the work dir;
-        // the file itself is removed by Laravel after the response is sent.
+        // Move the deliverable out of the work dir, then delete the work dir
         $final = storage_path('app/pdfolio/out-'.Str::uuid().'-'.$name);
         if (! @rename($path, $final)) {
             copy($path, $final);
@@ -230,7 +204,46 @@ class ToolController extends Controller
         }
         $this->cleanup($workDir);
 
-        return response()->download($final, $name)->deleteFileAfterSend();
+        // Guarantee deletion as soon as the response finishes or if script terminates/aborts
+        register_shutdown_function(function () use ($final): void {
+            if (file_exists($final)) {
+                @unlink($final);
+            }
+        });
+
+        // Opportunistically prune any stale abandoned files older than 10 minutes
+        $this->pruneStaleFiles();
+
+        return response()->download($final, $name, [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Purge abandoned output or temporary directories older than 10 minutes.
+     */
+    private function pruneStaleFiles(): void
+    {
+        $base = storage_path('app/pdfolio');
+        if (! is_dir($base)) {
+            return;
+        }
+
+        $threshold = time() - 600; // 10 minutes
+        $items = glob($base.'/*') ?: [];
+        foreach ($items as $item) {
+            if (basename($item) === '.gitignore') {
+                continue;
+            }
+            if (filemtime($item) < $threshold) {
+                if (is_dir($item)) {
+                    $this->cleanup($item);
+                } else {
+                    @unlink($item);
+                }
+            }
+        }
     }
 
     public function cleanup(string $workDir): void

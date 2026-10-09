@@ -264,7 +264,6 @@ class PdfProcessorTest extends TestCase
         $this->assertArrayHasKey('qpdf', $env);
         $this->assertArrayHasKey('poppler', $env);
         $this->assertArrayHasKey('libreoffice', $env);
-        $this->assertArrayHasKey('ocrmypdf', $env);
 
         foreach ($env as $engine) {
             $this->assertArrayHasKey('name', $engine);

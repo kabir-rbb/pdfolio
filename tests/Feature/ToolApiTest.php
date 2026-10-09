@@ -61,7 +61,14 @@ class ToolApiTest extends TestCase
                 'options',
             ],
         ]);
-        $this->assertCount(14, $response->json());
+        $this->assertCount(11, $response->json());
+    }
+
+    public function test_removed_tools_return_404(): void
+    {
+        $this->postJson('/api/tools/protect')->assertStatus(404);
+        $this->postJson('/api/tools/unlock')->assertStatus(404);
+        $this->postJson('/api/tools/ocr')->assertStatus(404);
     }
 
     public function test_unknown_tool_returns_404(): void
@@ -167,20 +174,6 @@ class ToolApiTest extends TestCase
         ], ['Accept' => 'application/json']);
         $responseNoOptions->assertStatus(422);
         $responseNoOptions->assertJsonValidationErrors(['position', 'format', 'start']);
-    }
-
-    public function test_protect_validation(): void
-    {
-        $response = $this->postJson('/api/tools/protect');
-        $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['file']);
-
-        $pdf = $this->createFakePdf();
-        $responseNoPassword = $this->post('/api/tools/protect', [
-            'file' => $pdf,
-        ], ['Accept' => 'application/json']);
-        $responseNoPassword->assertStatus(422);
-        $responseNoPassword->assertJsonValidationErrors(['password']);
     }
 
     public function test_office_to_pdf_validation_requires_file(): void

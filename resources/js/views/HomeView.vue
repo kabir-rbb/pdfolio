@@ -34,15 +34,14 @@ onMounted(async () => {
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 22s8-3.6 8-10V5l-8-3-8 3v7c0 6.4 8 10 8 10z" />
                 </svg>
-                Private by design — files stay on your server
+                Private by design — files is not saved on the server
             </span>
             <h1 class="mx-auto mt-6 max-w-3xl text-4xl font-extrabold tracking-tight text-brand-900 sm:text-5xl">
                 Every PDF tool you need,
                 <span class="bg-gradient-to-r from-brand-600 via-tangerine-400 to-mint-500 bg-clip-text text-transparent">in one place</span>
             </h1>
             <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-500">
-                Merge, split, compress, convert, rotate, protect and watermark PDFs —
-                no uploads to third parties, no limits, no accounts.
+                Merge, split, compress, convert, rotate and watermark PDFs.
             </p>
         </div>
     </section>

@@ -12,7 +12,7 @@ class ToolRegistryTest extends TestCase
         $tools = ToolRegistry::all();
 
         $this->assertIsArray($tools);
-        $this->assertCount(14, $tools);
+        $this->assertCount(11, $tools);
     }
 
     public function test_every_tool_has_required_schema_fields(): void

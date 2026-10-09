@@ -121,6 +121,18 @@ Check what is installed:
 tesseract --list-langs
 ```
 
+### Ghostscript AppArmor permission (Ubuntu)
+
+On Ubuntu systems, AppArmor confines `/usr/bin/gs` and denies it from reading or writing files under `/var/www` (`apparmor="DENIED"` in `dmesg`), which causes Ghostscript to fail with:
+`**** Could not open the file ... **** Unable to open the initial device, quitting.`
+
+Disable the restrictive AppArmor profile for Ghostscript:
+
+```bash
+sudo apt install -y apparmor-utils
+sudo aa-disable /usr/bin/gs
+```
+
 ## 7. Install PDFolio
 
 ```bash
@@ -159,10 +171,13 @@ sudo chown -R www-data:www-data /var/www/pdfolio/storage /var/www/pdfolio/bootst
 sudo chmod -R 775 /var/www/pdfolio/storage /var/www/pdfolio/bootstrap/cache
 ```
 
-## 8. Raise PHP limits
+## 8. Raise PHP and Web Server (Nginx) upload limits
 
-PDFolio accepts uploads up to 100 MB per file. Edit
-`/etc/php/8.3/fpm/php.ini` (and `cli/php.ini` if you run artisan jobs):
+PDFolio accepts uploads up to 100 MB per file (and up to 220 MB for multi-file merges). Both PHP and your web server must allow these sizes.
+
+### PHP limits
+
+Edit `/etc/php/8.3/fpm/php.ini` (and `cli/php.ini` if you run artisan jobs):
 
 ```ini
 upload_max_filesize = 100M
@@ -176,6 +191,28 @@ Apply:
 
 ```bash
 sudo systemctl restart php8.3-fpm
+```
+
+### Nginx upload limit (`client_max_body_size`)
+
+By default, Nginx limits uploads to **1 MB**. Uploads larger than 1 MB will be blocked with `413 Request Entity Too Large` (`client intended to send too large body` in Nginx error logs).
+
+In your Nginx site configuration (`/etc/nginx/sites-available/pdfolio` or `/etc/nginx/nginx.conf`), set `client_max_body_size` inside the `server` block:
+
+```nginx
+server {
+    ...
+    # Allow uploads up to 220M (at least 100M required)
+    client_max_body_size 220M;
+    ...
+}
+```
+
+Reload Nginx:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
 Continue to `docs/DEPLOYMENT.md` to put the app behind nginx with HTTPS.

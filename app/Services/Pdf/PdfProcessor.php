@@ -112,28 +112,6 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  Protect / Unlock (qpdf) */
-    /* ----------------------------------------------------------------- */
-
-    public function protect(string $file, string $password, string $out): void
-    {
-        $owner = bin2hex(random_bytes(12));
-        $this->run(['qpdf', '--encrypt', $password, $owner, '256', '--', $file, $out]);
-    }
-
-    public function unlock(string $file, ?string $password, string $out): void
-    {
-        $cmd = ['qpdf'];
-        if ($password !== null && $password !== '') {
-            $cmd[] = '--password='.$password;
-        }
-        $cmd[] = '--decrypt';
-        $cmd[] = $file;
-        $cmd[] = $out;
-        $this->run($cmd, 'Could not unlock this PDF — the password may be incorrect.');
-    }
-
-    /* ----------------------------------------------------------------- */
     /*  Watermark (FPDI) */
     /* ----------------------------------------------------------------- */
 
@@ -362,33 +340,6 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  OCR (OCRmyPDF + Tesseract) */
-    /* ----------------------------------------------------------------- */
-
-    public function ocr(string $file, string $language, bool $skipText, bool $rotatePages, string $out): void
-    {
-        $cmd = ['ocrmypdf', '-l', $language, '--output-type', 'pdf'];
-        if ($skipText) {
-            $cmd[] = '--skip-text';
-        }
-        if ($rotatePages) {
-            $cmd[] = '--rotate-pages';
-        }
-        $cmd[] = $file;
-        $cmd[] = $out;
-
-        $this->run(
-            $cmd,
-            'OCR failed — the document may already contain text, or the selected language data is not installed on the server.',
-            600
-        );
-
-        if (! file_exists($out) || filesize($out) === 0) {
-            throw new RuntimeException('OCR produced no output file.');
-        }
-    }
-
-    /* ----------------------------------------------------------------- */
     /*  Helpers */
     /* ----------------------------------------------------------------- */
 
@@ -574,11 +525,6 @@ class PdfProcessor
         return $this->isBinaryAvailable('pdftoppm') && $this->isBinaryAvailable('pdftotext');
     }
 
-    public function isOcrAvailable(): bool
-    {
-        return $this->isBinaryAvailable('ocrmypdf');
-    }
-
     private function isBinaryAvailable(string $binary): bool
     {
         if (file_exists($binary)) {
@@ -607,7 +553,7 @@ class PdfProcessor
                 'package' => 'ghostscript',
             ],
             'qpdf' => [
-                'name' => 'QPDF (rotate, protect, unlock)',
+                'name' => 'QPDF (rotate)',
                 'available' => $this->isQpdfAvailable(),
                 'binary' => 'qpdf',
                 'package' => 'qpdf',
@@ -623,12 +569,6 @@ class PdfProcessor
                 'available' => $this->isLibreOfficeAvailable(),
                 'binary' => $this->libreOfficeBinary(),
                 'package' => 'libreoffice',
-            ],
-            'ocrmypdf' => [
-                'name' => 'OCRmyPDF + Tesseract (ocr)',
-                'available' => $this->isOcrAvailable(),
-                'binary' => 'ocrmypdf',
-                'package' => 'ocrmypdf tesseract-ocr',
             ],
         ];
     }

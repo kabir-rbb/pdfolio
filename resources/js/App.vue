@@ -29,20 +29,16 @@ import { RouterView, RouterLink } from 'vue-router';
                     </RouterLink>
                     <RouterLink
                         to="/tool/merge"
-                        class="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700 sm:block"
+                        class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700"
                     >
                         Merge
                     </RouterLink>
                     <RouterLink
                         to="/tool/compress"
-                        class="hidden rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700 sm:block"
+                        class="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-brand-50 hover:text-brand-700"
                     >
                         Compress
                     </RouterLink>
-                    <span class="ml-1 hidden items-center gap-1.5 rounded-full bg-mint-100 px-3 py-1.5 text-xs font-bold text-mint-600 md:flex">
-                        <span class="h-1.5 w-1.5 rounded-full bg-mint-500"></span>
-                        Self-hosted
-                    </span>
                 </nav>
             </div>
         </header>
@@ -55,14 +51,9 @@ import { RouterView, RouterLink } from 'vue-router';
         <!-- Footer -->
         <footer class="border-t border-brand-100 bg-white">
             <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:px-6">
-                <p>
-                    <span class="font-bold text-brand-900">PDFolio</span> — your files never leave your server.
-                </p>
-                <div class="flex items-center gap-2">
-                    <span class="h-2.5 w-2.5 rounded-full bg-brand-500"></span>
-                    <span class="h-2.5 w-2.5 rounded-full bg-tangerine-300"></span>
-                    <span class="h-2.5 w-2.5 rounded-full bg-mint-300"></span>
-                    <span class="ml-1">Built with Laravel, Vue &amp; Tailwind</span>
+                <p>PDFolio - By Kabir Maharjan © 2026</p>
+                <div class="flex items-center gap-2 font-bold text-slate-600">
+                    <span>RBBL</span>
                 </div>
             </div>
         </footer>
