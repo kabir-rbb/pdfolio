@@ -1,0 +1,124 @@
+name: CI / CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    name: Build & Test (CI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, zip, intl, gd, curl, sqlite3
+          coverage: none
+
+      - name: Install System PDF Processing Engines
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            ghostscript \
+            qpdf \
+            poppler-utils \
+            libreoffice \
+            apparmor-utils
+          # Ensure AppArmor does not restrict Ghostscript during tests
+          sudo aa-disable /usr/bin/gs || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install PHP Dependencies
+        run: composer install --prefer-dist --no-interaction --optimize-autoloader
+
+      - name: Check Code Style (Laravel Pint)
+        run: vendor/bin/pint --test
+
+      - name: Install NPM Dependencies & Build Assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup Laravel Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          mkdir -p storage/app/pdfolio
+          mkdir -p storage/framework/{sessions,views,cache}
+          mkdir -p storage/logs
+          chmod -R 777 storage bootstrap/cache
+
+      - name: Run Test Suite (PHPUnit)
+        run: php artisan test --compact
+
+      - name: Run PDF Throughput Benchmark
+        run: php artisan pdfolio:bench --requests=15 --tool=merge
+
+  deploy:
+    name: Deploy to Ubuntu Server (CD)
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if Deployment Secrets are Configured
+        id: check_secrets
+        run: |
+          if [ -n "${{ secrets.SSH_HOST }}" ] && [ -n "${{ secrets.SSH_USERNAME }}" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "SSH_HOST or SSH_USERNAME secret is not set. Skipping automated deployment."
+          fi
+
+      - name: Deploy via SSH
+        if: steps.check_secrets.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd /var/www/pdfolio
+            echo "Pulling latest changes from main..."
+            git pull origin main
+            
+            echo "Updating Composer dependencies..."
+            composer install --no-dev --optimize-autoloader
+            
+            echo "Building frontend assets..."
+            npm install --production=false
+            npm run build
+            
+            echo "Clearing and caching configuration..."
+            php artisan optimize:clear
+            
+            echo "Reloading PHP-FPM..."
+            sudo systemctl reload php8.3-fpm || sudo systemctl reload php8.5-fpm || sudo systemctl restart php*-fpm || true
+            echo "Deployment completed successfully!"

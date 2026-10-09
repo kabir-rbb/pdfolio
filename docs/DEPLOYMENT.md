@@ -175,5 +175,33 @@ sudo systemctl enable --now pdfolio
 - [ ] Home page loads over HTTPS
 - [ ] Merge two PDFs end-to-end
 - [ ] Upload a ~50 MB file (limits working)
-- [ ] Run OCR on a scanned PDF
 - [ ] `storage/app/pdfolio/` contains no leftover files after a request
+
+---
+
+## 10. Automated CI/CD with GitHub Actions
+
+PDFolio includes a production-ready GitHub Actions workflow in [`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml).
+
+### Continuous Integration (CI)
+On every **Push** or **Pull Request** to `main`:
+1. Sets up PHP 8.3 and all required extensions.
+2. Installs system PDF engines (`ghostscript`, `qpdf`, `poppler-utils`, `libreoffice`).
+3. Runs Laravel Pint code style checks.
+4. Compiles frontend assets with Vite (`npm ci && npm run build`).
+5. Executes the full PHPUnit test suite.
+6. Runs a PDF throughput benchmark (`pdfolio:bench`).
+
+### Continuous Deployment (CD)
+When a push to `main` succeeds, GitHub Actions can automatically deploy to your Ubuntu server via SSH.
+
+To enable automated deployments:
+1. Go to your GitHub repository -> **Settings** -> **Secrets and variables** -> **Actions**.
+2. Add the following **Repository secrets**:
+   - `SSH_HOST`: Your server's public IP or hostname (e.g. `123.45.67.89` or `pdf.example.com`).
+   - `SSH_USERNAME`: Your server username (e.g. `kabir`).
+   - `SSH_KEY`: The private SSH key matching the server's `~/.ssh/authorized_keys`.
+   - `SSH_PORT`: (Optional, defaults to `22`).
+   - `SSH_PASSPHRASE`: (Optional, if your private key has a passphrase).
+
+Whenever you push commits to `main`, GitHub Actions will test the code and deploy it to `/var/www/pdfolio` automatically.
