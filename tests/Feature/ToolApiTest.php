@@ -209,7 +209,7 @@ class ToolApiTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
-        $this->assertStringContainsString('pdfolio-merged.pdf', (string) $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('doc1_merged.pdf', (string) $response->headers->get('content-disposition'));
     }
 
     public function test_split_endpoint_merge_mode_end_to_end(): void
@@ -224,7 +224,7 @@ class ToolApiTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
-        $this->assertStringContainsString('pdfolio-split.pdf', (string) $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('doc_split.pdf', (string) $response->headers->get('content-disposition'));
     }
 
     public function test_split_endpoint_all_mode_returns_zip(): void
@@ -238,7 +238,7 @@ class ToolApiTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/zip');
-        $this->assertStringContainsString('pdfolio-split.zip', (string) $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('doc_split.zip', (string) $response->headers->get('content-disposition'));
     }
 
     public function test_watermark_endpoint_end_to_end(): void
@@ -255,7 +255,7 @@ class ToolApiTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
-        $this->assertStringContainsString('pdfolio-watermarked.pdf', (string) $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('doc_watermarked.pdf', (string) $response->headers->get('content-disposition'));
     }
 
     public function test_page_numbers_endpoint_end_to_end(): void
@@ -271,7 +271,7 @@ class ToolApiTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
-        $this->assertStringContainsString('pdfolio-numbered.pdf', (string) $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('doc_numbered.pdf', (string) $response->headers->get('content-disposition'));
     }
 
     public function test_images_to_pdf_endpoint_end_to_end(): void
@@ -285,7 +285,7 @@ class ToolApiTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/pdf');
-        $this->assertStringContainsString('pdfolio-images.pdf', (string) $response->headers->get('content-disposition'));
+        $this->assertStringContainsString('photo1_converted.pdf', (string) $response->headers->get('content-disposition'));
     }
 
     /* ----------------------------------------------------------------- */
