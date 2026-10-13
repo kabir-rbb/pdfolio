@@ -61,7 +61,7 @@ class ToolApiTest extends TestCase
                 'options',
             ],
         ]);
-        $this->assertCount(11, $response->json());
+        $this->assertCount(10, $response->json());
     }
 
     public function test_removed_tools_return_404(): void
@@ -69,6 +69,7 @@ class ToolApiTest extends TestCase
         $this->postJson('/api/tools/protect')->assertStatus(404);
         $this->postJson('/api/tools/unlock')->assertStatus(404);
         $this->postJson('/api/tools/ocr')->assertStatus(404);
+        $this->postJson('/api/tools/pdf-to-word')->assertStatus(404);
     }
 
     public function test_unknown_tool_returns_404(): void

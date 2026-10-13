@@ -29,7 +29,7 @@ you later add a database-backed feature).
 | `ghostscript` | Compress PDF |
 | `qpdf` | Rotate, Protect, Unlock |
 | `poppler-utils` | PDF → Images, Extract Text |
-| `libreoffice` | Office → PDF, PDF → Word |
+| `libreoffice` | Office → PDF |
 | `tesseract-ocr` + `ocrmypdf` | OCR PDF |
 | `tesseract-ocr-osd` | OCR auto-rotate (required for that option) |
 | `tesseract-ocr-<lang>` | OCR languages beyond English |
@@ -88,39 +88,33 @@ node -v
 ## 6. Install the PDF engines
 
 ```bash
-sudo apt install -y ghostscript qpdf poppler-utils libreoffice libreoffice-writer libreoffice-draw \
+sudo apt install -y ghostscript qpdf poppler-utils libreoffice \
     ocrmypdf tesseract-ocr tesseract-ocr-osd
 ```
 
 Amazon Linux / Fedora:
 
 ```bash
-sudo dnf install -y ghostscript qpdf poppler-utils libreoffice libreoffice-writer libreoffice-draw \
+sudo dnf install -y ghostscript qpdf poppler-utils libreoffice \
     tesseract tesseract-osd
 pip3 install ocrmypdf
 ```
 
-### LibreOffice requirements & troubleshooting (Office → PDF and PDF → Word)
+### LibreOffice requirements (Office → PDF)
 
-PDFolio uses LibreOffice in headless mode for **Office to PDF** and **PDF to Word** (`writer_pdf_import`).
+PDFolio uses LibreOffice in headless mode for **Office to PDF** (Word, Excel, PowerPoint, ODF, RTF, CSV, TXT → PDF).
 
-1. **Required packages (`libreoffice-writer` and `libreoffice-draw`)**:
-   PDF-to-Word conversion uses LibreOffice Writer with the PDF import filter, which depends internally on the **Draw engine (`libreoffice-draw`)** to parse PDF structures. On minimal server installs or when installing without recommended packages, make sure both are installed:
+1. **Native package**:
    ```bash
-   sudo apt install -y libreoffice libreoffice-writer libreoffice-draw
+   sudo apt install -y libreoffice
    ```
 2. **Do NOT install via Snap**:
-   Never install LibreOffice using Snap (`snap install libreoffice`). Snap restricts file access via AppArmor, preventing LibreOffice from reading uploaded files in `/var/www` or `/tmp`, resulting in `Error: source file could not be loaded`. Always use APT:
+   Never install LibreOffice using Snap (`snap install libreoffice`). Snap restricts file access via AppArmor, preventing LibreOffice from reading uploaded files in `/var/www` or `/tmp`. Always use APT:
    ```bash
    # If snap was used, remove it:
    sudo snap remove libreoffice
-   sudo apt install -y libreoffice libreoffice-writer libreoffice-draw
+   sudo apt install -y libreoffice
    ```
-3. **If you encounter `Error: source file could not be loaded`**:
-   - Ensure `libreoffice-draw` is installed: `sudo apt install -y libreoffice-draw`
-   - Ensure storage permissions belong to `www-data`: `sudo chown -R www-data:www-data /var/www/pdfolio/storage`
-   - Kill any hung LibreOffice background instances: `sudo pkill -9 -f soffice`
-   - Verify the PDF is not password-protected or encrypted (use the **Unlock PDF** tool first if encrypted).
 
 ### OCR language packs
 

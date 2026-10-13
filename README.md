@@ -23,7 +23,6 @@ own machine, so your documents never leave your infrastructure.
 | **Protect PDF** | AES-256 password encryption | qpdf |
 | **Unlock PDF** | Remove a known password | qpdf |
 | **PDF to Images** | Each page → JPG or PNG at 72/150/300 dpi (ZIP) | Poppler |
-| **PDF to Word** | PDF → editable .docx, preserving layout | LibreOffice |
 | **OCR PDF** | Add a searchable text layer to scanned PDFs | OCRmyPDF + Tesseract |
 | **Images to PDF** | JPG / PNG / GIF images → one PDF | FPDF (PHP) |
 | **Extract Text** | Pull all text into a `.txt`, optionally keeping layout | Poppler |

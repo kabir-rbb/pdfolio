@@ -156,13 +156,6 @@ class ToolController extends Controller
 
                 return $this->download($out, $base.'_text.txt', $workDir);
 
-            case 'pdf-to-word':
-                [$file] = $this->storeFiles($request, $config, $workDir, 'file', ['mimes:pdf']);
-                $base = $this->baseFileName($request, 'file');
-                $produced = $pdf->pdfToWord($file, $workDir);
-
-                return $this->download($produced, $base.'.docx', $workDir);
-
             case 'office-to-pdf':
                 [$file] = $this->storeFiles($request, $config, $workDir, 'file', ['mimes:doc,docx,xls,xlsx,ppt,pptx,odt,ods,odp,rtf,csv,txt']);
                 $base = $this->baseFileName($request, 'file');

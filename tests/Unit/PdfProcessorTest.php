@@ -288,20 +288,6 @@ class PdfProcessorTest extends TestCase
         $mock->officeToPdf($this->tempDir.'/fake.docx', $this->tempDir);
     }
 
-    public function test_pdf_to_word_throws_descriptive_exception_when_libreoffice_unavailable(): void
-    {
-        $mock = $this->getMockBuilder(PdfProcessor::class)
-            ->onlyMethods(['isLibreOfficeAvailable'])
-            ->getMock();
-
-        $mock->method('isLibreOfficeAvailable')->willReturn(false);
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('LibreOffice is not installed or not found on the server');
-
-        $mock->pdfToWord($this->tempDir.'/fake.pdf', $this->tempDir);
-    }
-
     public function test_split_delegates_to_qpdf_when_available(): void
     {
         $pdf = $this->createSamplePdf(3);

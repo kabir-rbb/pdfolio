@@ -372,48 +372,6 @@ class PdfProcessor
     }
 
     /* ----------------------------------------------------------------- */
-    /*  PDF → Word (LibreOffice Writer PDF import filter) */
-    /* ----------------------------------------------------------------- */
-
-    public function pdfToWord(string $file, string $workDir): string
-    {
-        if (! $this->isLibreOfficeAvailable()) {
-            throw new RuntimeException(
-                'LibreOffice is not installed or not found on the server. '
-                .'Please install it (e.g. "sudo apt install libreoffice" on Ubuntu/Debian).'
-            );
-        }
-
-        $bin = $this->libreOfficeBinary();
-        $profileDir = str_replace('\\', '/', $workDir).'/lo_profile';
-        $fileUri = 'file:///'.ltrim(str_replace('\\', '/', $profileDir), '/');
-
-        $this->run([
-            $bin,
-            '-env:UserInstallation='.$fileUri,
-            '--headless',
-            '--norestore',
-            '--infilter=writer_pdf_import',
-            '--convert-to', 'docx', '--outdir', $workDir, $file,
-        ], 'LibreOffice could not convert this PDF to Word.', 180, $workDir, [
-            'HOME' => $workDir,
-            'TMPDIR' => $workDir,
-        ]);
-
-        $expectedDocx = $workDir.'/'.pathinfo($file, PATHINFO_FILENAME).'.docx';
-        if (file_exists($expectedDocx) && filesize($expectedDocx) > 0) {
-            return $expectedDocx;
-        }
-
-        $produced = glob($workDir.'/*.docx') ?: [];
-        if (! empty($produced) && filesize($produced[0]) > 0) {
-            return $produced[0];
-        }
-
-        throw new RuntimeException('The conversion produced no Word document.');
-    }
-
-    /* ----------------------------------------------------------------- */
     /*  Helpers */
     /* ----------------------------------------------------------------- */
 
@@ -662,7 +620,7 @@ class PdfProcessor
                 'package' => 'poppler-utils',
             ],
             'libreoffice' => [
-                'name' => 'LibreOffice (office-to-pdf, pdf-to-word)',
+                'name' => 'LibreOffice (office-to-pdf)',
                 'available' => $this->isLibreOfficeAvailable(),
                 'binary' => $this->libreOfficeBinary(),
                 'package' => 'libreoffice',
