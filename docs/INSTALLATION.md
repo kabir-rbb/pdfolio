@@ -88,17 +88,39 @@ node -v
 ## 6. Install the PDF engines
 
 ```bash
-sudo apt install -y ghostscript qpdf poppler-utils libreoffice \
+sudo apt install -y ghostscript qpdf poppler-utils libreoffice libreoffice-writer libreoffice-draw \
     ocrmypdf tesseract-ocr tesseract-ocr-osd
 ```
 
 Amazon Linux / Fedora:
 
 ```bash
-sudo dnf install -y ghostscript qpdf poppler-utils libreoffice \
+sudo dnf install -y ghostscript qpdf poppler-utils libreoffice libreoffice-writer libreoffice-draw \
     tesseract tesseract-osd
 pip3 install ocrmypdf
 ```
+
+### LibreOffice requirements & troubleshooting (Office → PDF and PDF → Word)
+
+PDFolio uses LibreOffice in headless mode for **Office to PDF** and **PDF to Word** (`writer_pdf_import`).
+
+1. **Required packages (`libreoffice-writer` and `libreoffice-draw`)**:
+   PDF-to-Word conversion uses LibreOffice Writer with the PDF import filter, which depends internally on the **Draw engine (`libreoffice-draw`)** to parse PDF structures. On minimal server installs or when installing without recommended packages, make sure both are installed:
+   ```bash
+   sudo apt install -y libreoffice libreoffice-writer libreoffice-draw
+   ```
+2. **Do NOT install via Snap**:
+   Never install LibreOffice using Snap (`snap install libreoffice`). Snap restricts file access via AppArmor, preventing LibreOffice from reading uploaded files in `/var/www` or `/tmp`, resulting in `Error: source file could not be loaded`. Always use APT:
+   ```bash
+   # If snap was used, remove it:
+   sudo snap remove libreoffice
+   sudo apt install -y libreoffice libreoffice-writer libreoffice-draw
+   ```
+3. **If you encounter `Error: source file could not be loaded`**:
+   - Ensure `libreoffice-draw` is installed: `sudo apt install -y libreoffice-draw`
+   - Ensure storage permissions belong to `www-data`: `sudo chown -R www-data:www-data /var/www/pdfolio/storage`
+   - Kill any hung LibreOffice background instances: `sudo pkill -9 -f soffice`
+   - Verify the PDF is not password-protected or encrypted (use the **Unlock PDF** tool first if encrypted).
 
 ### OCR language packs
 

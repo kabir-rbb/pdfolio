@@ -167,7 +167,7 @@ sudo systemctl enable --now pdfolio
 | "Failed to open stream" on storage | `sudo chown -R www-data:www-data storage bootstrap/cache` |
 | OCR fails with "language not installed" | Install the matching `tesseract-ocr-<lang>` pack |
 | OCR fails with "osd" error | Install `tesseract-ocr-osd` (needed by auto-rotate) |
-| Office/PDF→Word conversion fails | LibreOffice needs a writable `$HOME`; ensure the PHP-FPM user can write to `/tmp`, or run `sudo -u www-data soffice --headless --terminate_after_init` once to create its profile |
+| Office/PDF→Word conversion fails | Ensure `libreoffice-writer` and `libreoffice-draw` are installed via APT (`sudo apt install -y libreoffice libreoffice-writer libreoffice-draw`). Do NOT install via Snap. Check permissions on `storage/` for `www-data`, kill hung processes with `sudo pkill -9 -f soffice`, and verify PDF is not encrypted |
 | Everything slow on first request | Run the `config:cache` / `route:cache` / `view:cache` commands |
 
 ## 9. Health checklist after deploy

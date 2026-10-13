@@ -301,4 +301,96 @@ class PdfProcessorTest extends TestCase
 
         $mock->pdfToWord($this->tempDir.'/fake.pdf', $this->tempDir);
     }
+
+    public function test_split_delegates_to_qpdf_when_available(): void
+    {
+        $pdf = $this->createSamplePdf(3);
+        $ranges = [[1, 2]];
+
+        $mock = $this->getMockBuilder(PdfProcessor::class)
+            ->onlyMethods(['isQpdfAvailable', 'splitWithQpdf'])
+            ->getMock();
+
+        $mock->method('isQpdfAvailable')->willReturn(true);
+        $mock->expects($this->once())
+            ->method('splitWithQpdf')
+            ->with($pdf, $ranges, 'separate', $this->tempDir)
+            ->willReturn([$this->tempDir.'/pages-1-2.pdf']);
+
+        $result = $mock->split($pdf, $ranges, 'separate', $this->tempDir);
+        $this->assertSame([$this->tempDir.'/pages-1-2.pdf'], $result);
+    }
+
+    public function test_split_falls_back_to_fpdi_when_qpdf_throws_exception(): void
+    {
+        $pdf = $this->createSamplePdf(2);
+        $ranges = [[1, 1]];
+
+        $mock = $this->getMockBuilder(PdfProcessor::class)
+            ->onlyMethods(['isQpdfAvailable', 'splitWithQpdf'])
+            ->getMock();
+
+        $mock->method('isQpdfAvailable')->willReturn(true);
+        $mock->method('splitWithQpdf')->willThrowException(new RuntimeException('QPDF crashed'));
+
+        $result = $mock->split($pdf, $ranges, 'separate', $this->tempDir);
+
+        $this->assertCount(1, $result);
+        $this->assertFileExists($result[0]);
+        $this->assertSame(1, $this->processor->pageCount($result[0]));
+    }
+
+    public function test_split_with_qpdf_builds_correct_cli_commands(): void
+    {
+        $mock = $this->getMockBuilder(PdfProcessor::class)
+            ->onlyMethods(['run', 'qpdfBinary'])
+            ->getMock();
+
+        $mock->method('qpdfBinary')->willReturn('qpdf');
+
+        $executedCommands = [];
+        $mock->method('run')->willReturnCallback(function (array $cmd) use (&$executedCommands): void {
+            $executedCommands[] = $cmd;
+        });
+
+        // Test merge mode
+        $mock->splitWithQpdf('sample.pdf', [[1, 2], [4, 4]], 'merge', $this->tempDir);
+        $this->assertCount(1, $executedCommands);
+        $this->assertSame([
+            'qpdf',
+            '--warning-exit-0',
+            '--empty',
+            '--pages',
+            'sample.pdf',
+            '1-2',
+            '4',
+            '--',
+            $this->tempDir.'/split-1-2_4-4.pdf',
+        ], $executedCommands[0]);
+
+        // Test separate mode
+        $executedCommands = [];
+        $mock->splitWithQpdf('sample.pdf', [[1, 1], [3, 4]], 'separate', $this->tempDir);
+        $this->assertCount(2, $executedCommands);
+        $this->assertSame([
+            'qpdf',
+            '--warning-exit-0',
+            '--empty',
+            '--pages',
+            'sample.pdf',
+            '1',
+            '--',
+            $this->tempDir.'/pages-1-1.pdf',
+        ], $executedCommands[0]);
+        $this->assertSame([
+            'qpdf',
+            '--warning-exit-0',
+            '--empty',
+            '--pages',
+            'sample.pdf',
+            '3-4',
+            '--',
+            $this->tempDir.'/pages-3-4.pdf',
+        ], $executedCommands[1]);
+    }
 }

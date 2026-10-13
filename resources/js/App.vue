@@ -51,7 +51,7 @@ import { RouterView, RouterLink } from 'vue-router';
         <!-- Footer -->
         <footer class="border-t border-brand-100 bg-white">
             <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-slate-500 sm:flex-row sm:px-6">
-                <p>PDFolio - By Kabir Maharjan © 2026</p>
+                <p>PDFolio - By <a href="mailto:kabir.maharjan@rbb.com.np" class="font-medium text-brand-600 underline decoration-brand-300 underline-offset-2 transition hover:text-brand-800">Kabir Maharjan</a> © 2026</p>
                 <div class="flex items-center gap-2 font-bold text-slate-600">
                     <span>RBBL</span>
                 </div>

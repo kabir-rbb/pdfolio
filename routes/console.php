@@ -84,7 +84,7 @@ Artisan::command('pdfolio:check', function (PdfProcessor $pdf) {
         $this->info(PHP_EOL.'All dependencies are installed and ready!');
     } else {
         $this->warn(PHP_EOL.'Some dependencies are missing. On Ubuntu/Debian, run:');
-        $this->comment('sudo apt install ghostscript qpdf poppler-utils libreoffice');
+        $this->comment('sudo apt install ghostscript qpdf poppler-utils libreoffice libreoffice-writer libreoffice-draw');
     }
 })->purpose('Check availability of PDF processing engines and system tools');
 

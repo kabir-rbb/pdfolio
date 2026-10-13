@@ -55,6 +55,80 @@ class PdfProcessor
             throw new RuntimeException('No valid page ranges were provided.');
         }
 
+        // QPDF cleanly extracts only the objects referenced by the target pages,
+        // preventing huge file bloat where each page inherits all global document assets.
+        if ($this->isQpdfAvailable()) {
+            try {
+                return $this->splitWithQpdf($file, $ranges, $mode, $workDir);
+            } catch (\Throwable) {
+                // If QPDF encounters an issue, fallback seamlessly to FPDI
+            }
+        }
+
+        return $this->splitWithFpdi($file, $ranges, $mode, $workDir);
+    }
+
+    /**
+     * Split/extract pages using QPDF for minimal file sizes and fast extraction.
+     *
+     * @param  array<int, array{0:int,1:int}>  $ranges
+     * @return array<int, string>
+     */
+    public function splitWithQpdf(string $file, array $ranges, string $mode, string $workDir): array
+    {
+        $bin = $this->qpdfBinary();
+        $outputs = [];
+
+        if ($mode === 'merge') {
+            $out = $workDir.'/split-'.$this->rangeLabel($ranges).'.pdf';
+            $pageSpecs = [];
+            foreach ($ranges as [$start, $end]) {
+                $pageSpecs[] = $start === $end ? (string) $start : "{$start}-{$end}";
+            }
+
+            $this->run(array_merge([
+                $bin,
+                '--warning-exit-0',
+                '--empty',
+                '--pages',
+                $file,
+            ], $pageSpecs, [
+                '--',
+                $out,
+            ]), 'Failed to extract PDF pages with QPDF.');
+
+            $outputs[] = $out;
+        } else {
+            foreach ($ranges as [$start, $end]) {
+                $out = $workDir.'/pages-'.$start.'-'.$end.'.pdf';
+                $spec = $start === $end ? (string) $start : "{$start}-{$end}";
+
+                $this->run([
+                    $bin,
+                    '--warning-exit-0',
+                    '--empty',
+                    '--pages',
+                    $file,
+                    $spec,
+                    '--',
+                    $out,
+                ], 'Failed to split PDF with QPDF.');
+
+                $outputs[] = $out;
+            }
+        }
+
+        return $outputs;
+    }
+
+    /**
+     * Pure-PHP fallback split using FPDI when QPDF is unavailable.
+     *
+     * @param  array<int, array{0:int,1:int}>  $ranges
+     * @return array<int, string>
+     */
+    public function splitWithFpdi(string $file, array $ranges, string $mode, string $workDir): array
+    {
         $outputs = [];
 
         if ($mode === 'merge') {
@@ -108,7 +182,7 @@ class PdfProcessor
 
     public function rotate(string $file, int $degrees, string $out): void
     {
-        $this->run(['qpdf', $file, $out, '--rotate=+'.$degrees.':1-z']);
+        $this->run([$this->qpdfBinary(), '--warning-exit-0', $file, $out, '--rotate=+'.$degrees.':1-z']);
     }
 
     /* ----------------------------------------------------------------- */
@@ -515,9 +589,32 @@ class PdfProcessor
         return $this->isBinaryAvailable($this->libreOfficeBinary());
     }
 
+    public function qpdfBinary(): string
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            foreach (['qpdf'] as $bin) {
+                $process = new Process(['where', $bin]);
+                $process->run();
+                if ($process->isSuccessful()) {
+                    return $bin;
+                }
+            }
+
+            return 'qpdf';
+        }
+
+        foreach (['/usr/bin/qpdf', '/usr/local/bin/qpdf', '/bin/qpdf'] as $bin) {
+            if (is_executable($bin)) {
+                return $bin;
+            }
+        }
+
+        return 'qpdf';
+    }
+
     public function isQpdfAvailable(): bool
     {
-        return $this->isBinaryAvailable('qpdf');
+        return $this->isBinaryAvailable($this->qpdfBinary());
     }
 
     public function isPopplerAvailable(): bool
